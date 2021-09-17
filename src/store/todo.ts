@@ -1,4 +1,4 @@
-import { makeAutoObservable } from "mobx"
+import { makeAutoObservable, observable } from "mobx"
 
 interface ITodo {
     id: number
@@ -6,36 +6,44 @@ interface ITodo {
     completed: boolean
 }
 
+// создаем объект который сразу будет прослушиваемым
+// он слушается функцией observer в компоненте Todo
+const todosTemp: ITodo[] = observable([])
+
+
 class Todo {
-    todos: ITodo[] = [
-        {id: 100, title: 'Купить хлеб', completed: false},
-        {id: 200, title: 'Пройти курс', completed: false},
-        {id: 300, title: 'Сделать практику', completed: false}
-    ]
-    
+    todos: ITodo[] = todosTemp
+    count: number = 2
+
     constructor() {
-        makeAutoObservable(this)
+        // запрос тестовых данных
+        fetch('https://jsonplaceholder.typicode.com/todos/2')
+            .then(async response => this.todos.push(await response.json()))
     }
 
     addTodo(): void {
-        fetch('https://jsonplaceholder.typicode.com/todos')
-            .then(response => response.json())
-            .then(json => this.todos = [...json])
+        this.count++
+        fetch(`https://jsonplaceholder.typicode.com/todos/${this.count}`)
+            .then(async response => this.todos.push(await response.json()))
     }
 
     removeTodo(id: number): void {
-        console.log('удаление элемента');
-        
-        setTimeout(() => {
-            this.todos = this.todos.filter(todo => todo.id !== id)
-        }, 2000)
+
+        const index = this.todos.reduce((index, todo, i) => {
+            if (todo.id === id)  index = i
+            return index
+        }, -1)
+
+        if (index > -1) {
+            // удаляем элемент с помощью splice из текущего массива
+            // возвращает новый массив из удаленных элементов
+            this.todos.splice(index, 1)
+        }
     }
 
     completeTodo(todo: ITodo): void {
         todo.completed = !todo.completed
-        console.log('работа с состоянием');
-        
-        
+        console.log('работа с состоянием', this.todos)
     }
 
 }
